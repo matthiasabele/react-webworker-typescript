@@ -1,5 +1,5 @@
 import React from 'react';
-import Worker from "./worker/worker";
+import Worker from "./worker";
 
 function App() {
 
@@ -11,7 +11,7 @@ function App() {
     if (canvasRef.current) {
       // const offscreen = canvasRef.current.transferControlToOffscreen();
       const workerCanvas = new Worker();
-      workerCanvas.postMessage({ test: 1 });
+      workerCanvas.processData("CIAO");
       // workerCanvas.postMessage(offscreen, [offscreen]);
       workerCanvas.onmessage = (message: Event) => {
         console.log("message from worker", message);
