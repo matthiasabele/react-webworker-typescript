@@ -1,5 +1,6 @@
 import React from 'react';
-import Worker from "./worker";
+// eslint-disable-next-line import/no-webpack-loader-syntax
+import Worker from "worker-loader!./webworker/worker";
 
 function App() {
 
@@ -8,14 +9,12 @@ function App() {
   let counter = 0;
 
   const loadWorker = (): void => {
+    const worker = new Worker();
+    worker.onmessage = (event) => {};
+    worker.addEventListener("message", (event) => {});
     if (canvasRef.current) {
-      // const offscreen = canvasRef.current.transferControlToOffscreen();
-      const workerCanvas = new Worker();
-      workerCanvas.processData("CIAO");
-      // workerCanvas.postMessage(offscreen, [offscreen]);
-      workerCanvas.onmessage = (message: Event) => {
-        console.log("message from worker", message);
-      }
+      const offscreen = canvasRef.current.transferControlToOffscreen();
+      worker.postMessage(offscreen, [offscreen]);
     }
   }
 
