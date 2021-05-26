@@ -1,24 +1,54 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import Worker from "./worker/worker";
 
 function App() {
+
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const canvasRef2 = React.useRef<HTMLCanvasElement>(null);
+  let counter = 0;
+
+  const loadWorker = (): void => {
+    if (canvasRef.current) {
+      // const offscreen = canvasRef.current.transferControlToOffscreen();
+      const workerCanvas = new Worker();
+      workerCanvas.postMessage({ test: 1 });
+      // workerCanvas.postMessage(offscreen, [offscreen]);
+      workerCanvas.onmessage = (message: Event) => {
+        console.log("message from worker", message);
+      }
+    }
+  }
+
+  const draw = (): void => {
+    if (!canvasRef2.current)
+      return;
+    const ctx = canvasRef2.current.getContext("2d");
+    if (!ctx)
+      return;
+    const cx = canvasRef2.current.width;
+    const cy = canvasRef2.current.height;
+
+    setInterval(() => {
+      console.log("counter", counter);
+      counter ++;
+      ctx.clearRect(0, 0, cx, cy);
+      ctx.font = "20px Arial";
+      ctx.strokeText("Counter " + counter, 40, 40);
+    }, 2);
+  }
+
+  const loadCanvas = (): void => {
+    requestAnimationFrame(draw);
+  }
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <button onClick={() => {loadWorker();}}>Click me worker</button>
+      <button onClick={() => {loadCanvas();}}>Click me canvas</button>
+      <canvas className="noiseCanvas" ref={canvasRef}/>
+      <canvas className="noiseCanvas" ref={canvasRef2}/>
+      <div className="overlay">
+      </div>
     </div>
   );
 }
