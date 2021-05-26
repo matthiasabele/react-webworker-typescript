@@ -1,5 +1,5 @@
 /* eslint-disable-next-line no-restricted-globals */
-const ctx: Worker = self as any;
+const workerCtx: Worker = self as any;
 let counter = 0;
 let canvas: OffscreenCanvas;
 
@@ -14,7 +14,7 @@ const draw = (): void => {
 
   setInterval(() => {
     counter++;
-    console.log("counter", counter);
+    // console.log("counter", counter);
     ctx.clearRect(0, 0, cx, cy);
     ctx.font = "20px Arial";
     ctx.strokeText("Counter " + counter, 40, 40);
@@ -22,14 +22,14 @@ const draw = (): void => {
 }
 
 // Post data to parent thread
-ctx.postMessage({ foo: "foo" });
+// workerCtx.postMessage({ foo: "foo" });
 
 // Respond to message from parent thread
-ctx.addEventListener("message", (event) => {
+workerCtx.onmessage = ((event) => {
   console.log(event);
   canvas = event.data;
   requestAnimationFrame(draw);
 });
 
 
-export default ctx;
+export default workerCtx;

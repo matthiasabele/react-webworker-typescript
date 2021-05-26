@@ -1,34 +1,59 @@
-import React from 'react';
+import React from "react";
+import "./App.css";
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import Worker from "worker-loader!./webworker/worker";
+interface IHTMLCanvasElementWithCapture extends HTMLCanvasElement {
+  captureStream(frameRate?: number): MediaStream;
+}
 
 function App() {
-
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const canvasRef2 = React.useRef<HTMLCanvasElement>(null);
+  const canvasRefOffScreen = React.useRef<HTMLCanvasElement>(null);
+  const canvasRefOnScreen = React.useRef<HTMLCanvasElement>(null);
+  const videoRefOffScreen = React.useRef<HTMLVideoElement>(null);
+  const videoRefOnScreen = React.useRef<HTMLVideoElement>(null);
+  const [streamOffScreen, setStreamOffScreen] = React.useState<MediaStream | null>(null);
+  const [streamOnScreen, setStreamOnScreen] = React.useState<MediaStream | null>(null);
   let counter = 0;
 
   const loadWorker = (): void => {
     const worker = new Worker();
-    worker.onmessage = (event) => {};
+    worker.onmessage = (event) => {
+      console.log("Receive message from worker", event);
+    };
     worker.addEventListener("message", (event) => {});
-    if (canvasRef.current) {
-      const offscreen = canvasRef.current.transferControlToOffscreen();
+    if (canvasRefOffScreen.current) {
+      const offscreen = canvasRefOffScreen.current.transferControlToOffscreen();
       worker.postMessage(offscreen, [offscreen]);
+      const canvas = canvasRefOffScreen.current as IHTMLCanvasElementWithCapture;
+      setStreamOffScreen(canvas.captureStream());
     }
   }
 
+  React.useEffect(() => {
+    if (streamOffScreen && videoRefOffScreen.current) {
+      videoRefOffScreen.current.srcObject = streamOffScreen;
+      videoRefOffScreen.current.play();
+    }
+  }, [streamOffScreen]);
+
+  React.useEffect(() => {
+    if (streamOnScreen && videoRefOnScreen.current) {
+      videoRefOnScreen.current.srcObject = streamOnScreen;
+      videoRefOnScreen.current.play();
+    }
+  }, [streamOnScreen]);
+
   const draw = (): void => {
-    if (!canvasRef2.current)
+    if (!canvasRefOnScreen.current)
       return;
-    const ctx = canvasRef2.current.getContext("2d");
+    const ctx = canvasRefOnScreen.current.getContext("2d");
     if (!ctx)
       return;
-    const cx = canvasRef2.current.width;
-    const cy = canvasRef2.current.height;
+    const cx = canvasRefOnScreen.current.width;
+    const cy = canvasRefOnScreen.current.height;
 
     setInterval(() => {
-      console.log("counter", counter);
+      // console.log("counter", counter);
       counter ++;
       ctx.clearRect(0, 0, cx, cy);
       ctx.font = "20px Arial";
@@ -37,16 +62,22 @@ function App() {
   }
 
   const loadCanvas = (): void => {
+    const canvas = canvasRefOnScreen.current as IHTMLCanvasElementWithCapture;
+    setStreamOnScreen(canvas.captureStream());
     requestAnimationFrame(draw);
   }
 
   return (
     <div className="App">
-      <button onClick={() => {loadWorker();}}>Click me worker</button>
-      <button onClick={() => {loadCanvas();}}>Click me canvas</button>
-      <canvas className="noiseCanvas" ref={canvasRef}/>
-      <canvas className="noiseCanvas" ref={canvasRef2}/>
-      <div className="overlay">
+      <div className="section">
+        <button onClick={() => {loadWorker();}}>WEB WORKER</button>
+        <span className="title">Canvas:</span><canvas className="offline" ref={canvasRefOffScreen}/>
+        <span className="title">Video:</span><video className="offline" playsInline autoPlay ref={videoRefOffScreen} />
+      </div>
+      <div className="section">
+        <button onClick={() => {loadCanvas();}}>ON SCREEN CANVAS</button>
+        <span className="title">Canvas:</span><canvas className="online" ref={canvasRefOnScreen}/>
+        <span className="title">Video:</span><video className="online" playsInline autoPlay ref={videoRefOnScreen} />
       </div>
     </div>
   );
